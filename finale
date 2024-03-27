@@ -1,0 +1,102 @@
+ANTHEM 
+Exploit a Windows machine in this beginner level challenge.
+Link: https://tryhackme.com/room/anthem
+
+--sudo nmap -sV -sS -sC -Pn 10.10.95.68
+    Starting Nmap 7.94 ( https://nmap.org ) at 2024-03-27 12:28 CET
+    Nmap scan report for 10.10.95.68
+    Host is up (0.063s latency).
+    Not shown: 998 filtered tcp ports (no-response)
+    PORT     STATE SERVICE       VERSION
+    80/tcp   open  http          Microsoft HTTPAPI httpd 2.0 (SSDP/UPnP)
+    |_http-title: Anthem.com - Welcome to our blog
+    | http-robots.txt: 4 disallowed entries 
+    |_/bin/ /config/ /umbraco/ /umbraco_client/
+    3389/tcp open  ms-wbt-server Microsoft Terminal Services
+    | ssl-cert: Subject: commonName=WIN-LU09299160F
+    | Not valid before: 2024-03-26T10:55:55
+    |_Not valid after:  2024-09-25T10:55:55
+    | rdp-ntlm-info: 
+    |   Target_Name: WIN-LU09299160F
+    |   NetBIOS_Domain_Name: WIN-LU09299160F
+    |   NetBIOS_Computer_Name: WIN-LU09299160F
+    |   DNS_Domain_Name: WIN-LU09299160F
+    |   DNS_Computer_Name: WIN-LU09299160F
+    |   Product_Version: 10.0.17763
+    |_  System_Time: 2024-03-27T11:29:05+00:00
+    |_ssl-date: 2024-03-27T11:29:13+00:00; 0s from scanner time.
+    Service Info: OS: Windows; CPE: cpe:/o:microsoft:windows
+    
+    Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+    Nmap done: 1 IP address (1 host up) scanned in 27.60 seconds
+    
+**What port is for the web server?
+  80
+**What port is for remote desktop service?
+  3389
+
+Analizzando la pagina web possiamo subito trovare la flag2 nella view-page source della pagina principale.
+**what is flag2?
+  THM{G!T_G00D}
+Ho aperto poi l'articolo "we are hiring" dove possiamo trovare la flag1 nei meta della view-page source
+**what is the flag1?
+  THM{L0L_WH0_US3S_M3T4}
+la flag3 è invece nella pagina dell'autore http://<machine-ip>/authors/jane-doe
+**what is the flag3?
+  THM{L0L_WH0_D15}
+la flag4 la troviamo sempre nei meta ma questa volta nella view-page source del secondo articolo
+**what is flag4?
+  THM{AN0TH3R_M3TA}
+a questo punto faccio partire Gobuster : 
+--gobuster dir --url http://<machine-ip> --wordlist /usr/share/wordlists/dirbuster/directory-list-2.3-small.txt
+    /search               (Status: 200) [Size: 3414]
+    /blog                 (Status: 200) [Size: 5389]
+    /rss                  (Status: 200) [Size: 1869]
+    /sitemap              (Status: 200) [Size: 1035]
+    /archive              (Status: 301) [Size: 123] [--> /blog/]
+    /categories           (Status: 200) [Size: 3536]
+    /authors              (Status: 200) [Size: 4110]
+    /Search               (Status: 200) [Size: 3464]
+    /tags                 (Status: 200) [Size: 3589]
+    /install              (Status: 302) [Size: 126] [--> /umbraco/]
+
+in http://<machine-ip>/robots.txt trovo la risposta alla seguente domanda:
+**What is a possible password in one of the pages web crawlers check for?
+  UmbracoIsTheBest!
+grazie al risultato di gobuster possiamo intuire anche il CMS in quanto digitando http://<macchina-ip>/install ci porta in un form di login gestito appunto da Umbraco. Quindi:
+**What CMS is the website using?
+  Umbraco
+alla domanda successiva possiamo rispondere molto velocemente
+**What is the domain of the website?
+  anthem.com
+Molto utile è il consiglio di googlare il poema nel secondo articolo per trovare la seguente risposta. 
+**What's the name of the Administrator
+  Solomon Grundy
+Non ho trovata l'email dell'amministratore nascosta da qualche parte nel sito ma ci forniscono l'email di uno degli autori (JD@anthem.com).
+Basta a questo punto cambiare le iniziali con quelle dell'amministratore.
+**Can we find find the email address of the administrator?
+  SG@anthem.com
+Abbiamo quindi a questo punto l'accesso al form umbraco (http://<macchina-ip>/umbraco/#/login) SG@anthem.com & UmbracoIsTheBest!
+una volta effettuato il login c'è la possibilità di inserire del codice ma a quanto pare non abbiamo necessità, le domande che tryhackme ci fa sono indirizzate alla macchina windows.
+dobbiamo quindi entrare tramite rdp nella macchina windows.
+--rdesktop 10.10.177.7
+a questo punto ci chiede username (che di solito non è un email) e password. provo subito con SG & UmbracoIsTheBest! e siamo dentro !
+rispondiamo subito alla prima domanda del final stage aprendo il file .txt che troviamo nel desktop.
+**Gain initial access to the machine, what is the contents of user.txt?
+  THM{N00T_NO0T}
+Dobbiamo quindi ora scalare i privilegi per rispondere alle domande successive, l'unico suggerimento che abbiamo è che la password dell'amministratore è nascosata.
+C'è una cartella nascosta chiamata background con un file all'interno che non ci è possibile al momento leggere.
+Dobbiamo andare sulle proprietà del file txt ->sicurity->edit->aggiungere l'utente che desideriamo nel campo vuoto. Ora abbiamo accesso al file e alla password amministratore.
+**Can we spote the admin password?
+  ChangeMeBaby1MoreTime
+A questo punto non ci rimane che entrare come admin cliccando su administrator(ci chiederà la password)->Desktop->root
+**Escalate your privileges to root, what is the contents of root.txt?
+  THM{Y0U_4R3_1337}
+Abbiamo cosi concluso questa macchina :)
+  
+
+
+
+
+
+  
